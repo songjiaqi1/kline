@@ -3,97 +3,79 @@ import './App.css';
 import kline  from './klinechart';
 import generatedKLineDataList from "./utils/generatedKLineDataList";
 import moment from 'moment';
+import obj from './utils/obj';
+import styled from 'styled-components';
 
-const M1 = 60 * 1000;
+import ChartContainer from './component/Chart'
 
-const MAP = {
-  '1m': M1,
-  '5m': M1*5,
-  '15m': M1*15,
-  '1h': M1* 60,
-  '1d': M1 * 60 * 24
-}
-
-
-const transformData = (data, type) => {
-  let data0 = data[0];
-  const rest = new Map();
-  rest.set(data0.timestamp, data0);
-  data.forEach((item, index) => {
-    if ((item.timestamp - data0.timestamp) >= MAP[type]) {
-      data0 = item;
-      rest.set(item.timestamp, item);
-    } else {
-      const newItem = { ...data0, close: item.close, open: data0.open, high: Math.max(data0.high, item.high), low: Math.min(item.low, data0.low)};
-      rest.set(data0.timestamp, newItem);
-    }
-  });
-
-  const newData = [];
-  rest.forEach((item) => {
-    newData.push(item);
-  });
-  return newData
-}
 
 function App() {
-  let chart, origin;
-  useEffect(() => {
-    chart = kline.init(`app`);
-    let list = generatedKLineDataList(Date.now(), 5000, 3000);
-    list.forEach((item, index) => {
-      item.timestamp = moment('2022-11-01 00:01').add(index, 'm').valueOf();
-    });
-    origin = list;
-    chart.applyNewData(list);
-    return () => {
-      kline.dispose('app');
-    }
-  }, []);
-
-
-  const [type, setType] = useState('1m');
-  const handleClick = useCallback((type) => {
-    setType(type);
-    const newData = transformData(origin, type);
-    chart.clearData();
-    chart.applyNewData(newData);
-  }, []);
-  let flag = 0;
-  useEffect(() => {
-    const id = setInterval(() => {
-      const data = generatedKLineDataList(Date.now(), 5000, 1)[0];
-      const curDataList = chart.getDataList();
-      const curData = curDataList[curDataList.length - 1];
-      flag++;
-      data.timestamp = curData.timestamp + 5000 * flag;
-      if (data.timestamp - curData.timestamp > MAP[type]) {
-        chart.updateData(data);
-        flag = 0;
-      } else {
-        const lastData = curDataList[curDataList.length - 1];
-        const newLastData = {...lastData, low: Math.min(lastData.low, data.low), close: data.close, high: Math.min(lastData.high, data.high), volume: lastData.volume + data.volume};
-        console.log(lastData.open, newLastData.open, newLastData, lastData);
-        chart.updateData(newLastData);
-      }
-      origin.push(data);
-    }, 1000);
-
-    return () => clearInterval(id);
-  }, [])
 
   return (
     <>
-        <div style={{width: '800px', height: '400px', margin: '30px auto'}} id='app' className="App">
-        </div>
-        <button onClick={() => handleClick('1m')}>1m</button>
-        <button onClick={() => handleClick('5m')}>5m</button>
-        <button onClick={() => handleClick('15m')}>15m</button>
-        <button onClick={() => handleClick('1h')}>1h</button>
-        <button onClick={() => handleClick('1d')}>1d</button>
+        <Header>
+            Header
+        </Header>
+        <Body>
+          <BodyLeft>
+            <LeftHeader>
+              BTC/USD
+            </LeftHeader>
+            <ChartContainer>
+            </ChartContainer>
+          </BodyLeft>
+          <BodyRight>
+          </BodyRight>
+      </Body>
     </>
-   
   );
 }
+
+
+const Header = styled.div`
+  height: .56rem;
+  width: 100%;
+  background-color: rgb(17, 17, 17);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: .20rem;
+`
+
+const Body = styled.div`
+  width: 100%;
+  height: auto;
+  display: flex;
+  flex-direction: row;
+`
+
+const BodyLeft = styled.div`
+  flex: 1 1 auto;
+  background-color: beige;
+`
+
+const BodyRight = styled.div`
+  width: 4rem;
+  min-height: 5rem;
+  background-color: rgb(41, 41, 44);
+`
+
+const LeftHeader = styled.div`
+  width: 100%;
+  height: .72rem;
+  background-color: rgb(24, 24, 26);
+  border-bottom: 1px solid rgb(47, 47, 47);
+  border-top: 1px solid rgb(47, 47, 47);
+  display: flex;
+  color: #fff;
+  font-size: .32rem;
+  align-items: center;
+`
+
+
+
+
+
 
 export default App;
