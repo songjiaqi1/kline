@@ -1,9 +1,15 @@
 import React, {useCallback, useEffect, useMemo, useState, useRef, useLayoutEffect} from 'react';
-import kline  from '../klinechart';
-import generatedKLineDataList from "../utils/generatedKLineDataList";
+import kline  from '../../klinechart';
+import generatedKLineDataList from "../../utils/generatedKLineDataList";
 import moment from 'moment';
-import obj from '../utils/obj';
+import obj from '../../utils/obj';
 import styled from "styled-components";
+
+import getThemeOptions from './theme.js';
+
+import { MAP, transformData } from './period';
+
+import indicator from './indicator';
 
 const TOOL_ITEMS = [
     {type: 'time', value: '1m', name: '1m'},
@@ -11,6 +17,8 @@ const TOOL_ITEMS = [
     {type: 'time', value: '15m', name: '15m'},
     {type: 'time', value: '1h', name: '1h'},
     {type: 'time', value: '1d', name: '1d'},
+    {type: 'volume', value: 'volumn', name: 'volume'},
+    {type: 'ma', value: '', name: 'MA'},
     {type: 'chart_type', value: 'candle_solid', name: 'candle'},
     {type: 'chart_type', value: 'area', name: 'area line'},
     {type: 'indicators', value: 'indicators', name: 'indicators'}
@@ -21,186 +29,13 @@ const TOOL_ITEMS2 = [
     {type: 'screen_shoot', name: 'screen shoot'},
 ];
 
-const indicator = {
-  name: 'MA1',
-  shortName: 'MA1',
-  series: 'price',
-  calcParams: [5],
-  precision: 2,
-  shouldCheckParamCount: false,
-  shouldOhlc: true,
-  plots: [
-    { key: 'ma5', title: 'MA5: ', type: 'line' },
-  ],
-  regeneratePlots: (params) => {
-    return params.map(p => {
-      return { key: `ma${p}`, title: `MA${p}: `, type: 'line' }
-    })
-  },
-  calcTechnicalIndicator: (dataList, { params, plots }) => {
-    const closeSums = []
-    return dataList.map((kLineData, i) => {
-      const ma = {}
-      const close = kLineData.close
-      params.forEach((p, index) => {
-        closeSums[index] = (closeSums[index] || 0) + close
-        if (i >= p - 1) {
-          ma[plots[index].key] = closeSums[index] / p
-          closeSums[index] -= dataList[i - (p - 1)].close
-        }
-      })
-      if (kLineData.high) {
-        ma.ma5 = kLineData.high;
-      }      
-      return ma
-    })
-  },
-  render: ({
-    ctx,
-    dataSource,
-    viewport,
-    styles,
-    xAxis,
-    yAxis
-  }) => {
-    console.log(yAxis);
-  }
-}
-
-const M1 = 60 * 1000;
-
-const MAP = {
-  '1m': M1,
-  '5m': M1 * 5,
-  '15m': M1 * 15,
-  '1h': M1 * 60,
-  '1d': M1 * 60 * 24
-}
-
-const transformData = (data, type) => {
-  let data0 = data[0];
-  const rest = new Map();
-  rest.set(data0.timestamp, data0);
-  data.forEach((item, index) => {
-    if ((item.timestamp - data0.timestamp) >= MAP[type]) {
-      data0 = item;
-      rest.set(item.timestamp, item);
-    } else {
-      const newItem = { ...data0, close: item.close, open: data0.open, high: Math.max(data0.high, item.high), low: Math.min(item.low, data0.low)};
-      rest.set(data0.timestamp, newItem);
-    }
-  });
-
-  const newData = [];
-  rest.forEach((item) => {
-    newData.push(item);
-  });
-  return newData
-}
-
-const themes = [
-  { key: 'dark', text: '深色' },
-  { key: 'light', text: '浅色' }
-]
-
-const textColorDark = '#929AA5'
-const gridColorDark = '#292929'
-const axisLineColorDark = '#333333'
-const crossTextBackgroundColorDark = '#373a40'
-
-const textColorLight = '#76808F'
-const gridColorLight = '#ededed'
-const axisLineColorLight = '#DDDDDD'
-const crossTextBackgroundColorLight = '#686d76'
-function getThemeOptions (theme) {
-  const textColor = theme === 'dark' ? textColorDark : textColorLight
-  const gridColor = theme === 'dark' ? gridColorDark : gridColorLight
-  const axisLineColor = theme === 'dark' ? axisLineColorDark : axisLineColorLight
-  const crossLineColor = theme === 'dark' ? axisLineColorDark : axisLineColorLight
-  const crossTextBackgroundColor = theme === 'dark' ? crossTextBackgroundColorDark : crossTextBackgroundColorLight
-  return {
-    grid: {
-      horizontal: {
-        color: gridColor
-      },
-      vertical: {
-        color: gridColor
-      }
-    },
-    candle: {
-      priceMark: {
-        high: {
-          color: textColor
-        },
-        low: {
-          color: textColor
-        }
-      },
-      tooltip: {
-        text: {
-          color: textColor
-        }
-      }
-    },
-    technicalIndicator: {
-      tooltip: {
-        text: {
-          color: textColor
-        }
-      }
-    },
-    xAxis: {
-      axisLine: {
-        color: axisLineColor
-      },
-      tickLine: {
-        color: axisLineColor
-      },
-      tickText: {
-        color: textColor
-      }
-    },
-    yAxis: {
-      axisLine: {
-        color: axisLineColor
-      },
-      tickLine: {
-        color: axisLineColor
-      },
-      tickText: {
-        color: textColor
-      }
-    },
-    separator: {
-      color: axisLineColor
-    },
-    crosshair: {
-      horizontal: {
-        line: {
-          color: crossLineColor
-        },
-        text: {
-          backgroundColor: crossTextBackgroundColor
-        }
-      },
-      vertical: {
-        line: {
-          color: crossLineColor
-        },
-        text: {
-          backgroundColor: crossTextBackgroundColor
-        }
-      }
-    }
-  }
-}
 
 
 const ChartWrapper = () => {
   let origin;
   const chart = useRef();
   let chartContainerRef = useRef(null);
-
+  const paneId = useRef();
   useEffect(() => {
     chart.current = kline.init(`app`);
     kline.extension.addTechnicalIndicatorTemplate([
@@ -237,6 +72,17 @@ const ChartWrapper = () => {
         candle: {
           type: item.value
         }})
+        return;
+    }
+
+    if (item.type === 'ma') {
+      chart.current.createTechnicalIndicator('MA', false, { id: 'candle_pane' })
+      return;
+    }
+
+    if (item.type === 'volume') {
+      paneId.current = chart.current.createTechnicalIndicator('VOL', false, { id: paneId.current });
+      return;
     }
   }, []);
   const handleClick2 = useCallback((item) => {
@@ -297,6 +143,14 @@ const ChartWrapper = () => {
   //   chart.createTechnicalIndicator('MA1', false, { id: 'candle_pane' })
   // }
 
+  const onClickLeft = () => {
+    chart.current.scrollByDistance(55);
+  }
+
+  const onClickRight = () => {
+    chart.current.scrollByDistance(-55);
+  }
+
 
   return (
     <ChartContainer>
@@ -317,6 +171,8 @@ const ChartWrapper = () => {
           </ToolItemsWrapper>
         </ChartToolBar>
         <div ref={ref => chartContainerRef = ref} style={{width: '100%', height: '4rem', margin: ''}} id='app' className="App"></div>
+        <div onClick={onClickLeft}>left</div>
+        <div onClick={onClickRight}>right</div>
     </ChartContainer>
   
   );

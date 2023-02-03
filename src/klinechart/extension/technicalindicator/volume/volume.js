@@ -12,19 +12,21 @@
  * limitations under the License.
  */
 
+import { collapseTextChangeRangesAcrossMultipleVersions } from "typescript"
+
 export default {
   name: 'VOL',
   shortName: 'VOL',
   series: 'volume',
-  calcParams: [5, 10, 20],
+  // calcParams: [5, 10, 20],
   shouldCheckParamCount: false,
   shouldFormatBigNumber: true,
   precision: 0,
   minValue: 0,
   plots: [
-    { key: 'ma5', title: 'MA5: ', type: 'line' },
-    { key: 'ma10', title: 'MA10: ', type: 'line' },
-    { key: 'ma20', title: 'MA20: ', type: 'line' },
+    // { key: 'ma5', title: 'MA5: ', type: 'line' },
+    // { key: 'ma10', title: 'MA10: ', type: 'line' },
+    // { key: 'ma20', title: 'MA20: ', type: 'line' },
     {
       key: 'volume',
       title: 'VOLUME: ',
@@ -33,18 +35,21 @@ export default {
       color: (data, options) => {
         const kLineData = data.current.kLineData || {}
         if (kLineData.close > kLineData.open) {
-          return options.bar.upColor
+          return 'rgb(38, 166, 154)'
+          // return options.bar.upColor
         } else if (kLineData.close < kLineData.open) {
-          return options.bar.downColor
+          return 'rgb(239, 83, 80)';
+          // return options.bar.downColor
         }
         return options.bar.noChangeColor
       }
     }
   ],
   regeneratePlots: (params) => {
-    const plots = params.map(p => {
-      return { key: `ma${p}`, title: `MA${p}: `, type: 'line' }
-    })
+    // const plots = params.map(p => {
+    //   return { key: `ma${p}`, title: `MA${p}: `, type: 'line' }
+    // });
+    const plots = [];
     plots.push({
       key: 'volume',
       title: 'VOLUME: ',

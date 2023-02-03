@@ -1,13 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React from 'react';
 import './App.css';
-import kline  from './klinechart';
-import generatedKLineDataList from "./utils/generatedKLineDataList";
-import moment from 'moment';
-import obj from './utils/obj';
 import styled from 'styled-components';
 
-import ChartContainer from './component/Chart'
-
+import ChartContainer from './component/chart/Chart';
+import HeaderWrapper from './component/data24/header24data';
+import RightContainer from './component/body-right/index';
 
 function App() {
 
@@ -19,13 +16,14 @@ function App() {
         <Body>
           <BodyLeft>
             <LeftHeader>
-              BTC/USD
+              <LeftHeaderNameContainer>
+                BTC/USD
+              </LeftHeaderNameContainer>
+              <HeaderWrapper/>
             </LeftHeader>
-            <ChartContainer>
-            </ChartContainer>
+            <ChartContainer/>
           </BodyLeft>
-          <BodyRight>
-          </BodyRight>
+          <RightContainer/>
       </Body>
     </>
   );
@@ -55,11 +53,7 @@ const BodyLeft = styled.div`
   background-color: beige;
 `
 
-const BodyRight = styled.div`
-  width: 4rem;
-  min-height: 5rem;
-  background-color: rgb(41, 41, 44);
-`
+
 
 const LeftHeader = styled.div`
   width: 100%;
@@ -71,6 +65,12 @@ const LeftHeader = styled.div`
   color: #fff;
   font-size: .32rem;
   align-items: center;
+`
+
+const LeftHeaderNameContainer = styled.div`
+  padding: 0 .3rem;
+  box-sizing: border-box;
+  width: fit-content;
 `
 
 
